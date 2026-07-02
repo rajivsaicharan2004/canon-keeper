@@ -5,6 +5,7 @@ from pathlib import Path
 from backend.app.ingestion import ingest
 from backend.app.extraction import extract_all
 from backend.app.vectors import store_facts
+from backend.app.detector import find_contradictions
 
 # Create the app. The title shows up on the /docs page.
 app = FastAPI(title="Canon Keeper API", version="0.1.0")
@@ -60,12 +61,15 @@ def analyze(filename: str):
     chunks = ingest(str(file_path))
     facts = extract_all(chunks)
     stored = store_facts(facts)
+    contradictions = find_contradictions(facts)
 
     return {
         "filename": filename,
         "num_chunks": len(chunks),
         "num_facts": len(facts),
         "stored_vectors": stored,
+        "num_contradictions": len(contradictions),
+        "contradictions": contradictions,
         "facts": facts,
     }
 
