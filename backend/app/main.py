@@ -2,6 +2,8 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
+from backend.app.ingestion import ingest
+
 # Create the app. The title shows up on the /docs page.
 app = FastAPI(title="Canon Keeper API", version="0.1.0")
 
@@ -48,9 +50,18 @@ async def upload(file: UploadFile = File(...)):
 
 
 @app.post("/analyze")
-def analyze():
-    # Placeholder — Part 2/3 will fill this in.
-    return {"message": "not implemented yet"}
+def analyze(filename: str):
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found. Upload it first.")
+
+    chunks = ingest(str(file_path))
+
+    return {
+        "filename": filename,
+        "num_chunks": len(chunks),
+        "first_chunk_preview": chunks[0]["text"][:300] if chunks else "",
+    }
 
 
 @app.get("/entities")
