@@ -1,3 +1,5 @@
+"""Fact extraction: turns document chunks into structured canon facts using Granite."""
+
 import json
 import ollama
 

@@ -1,3 +1,6 @@
+"""Contradiction detection: finds facts that conflict using semantic
+search (Qdrant) to surface candidates and Granite to judge them."""
+
 import json
 import ollama
 from qdrant_client.models import Filter

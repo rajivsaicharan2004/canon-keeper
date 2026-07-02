@@ -1,3 +1,5 @@
+"""FastAPI entrypoint for the Canon Keeper backend pipeline."""
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -54,21 +56,34 @@ async def upload(file: UploadFile = File(...)):
 
 @app.post("/analyze")
 def analyze(filename: str):
+    """
+    Run the full CanonKeeper pipeline on an uploaded file:
+    parse → chunk → extract facts → embed & store → detect contradictions.
+    """
     file_path = UPLOAD_DIR / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found. Upload it first.")
 
+    # 1. Parse the document and split it into scene-sized chunks.
     chunks = ingest(str(file_path))
+
+    # 2. Have Granite extract structured canon facts from each chunk.
     facts = extract_all(chunks)
+
+    # 3. Embed each fact and store it in the Qdrant vector database.
     stored = store_facts(facts)
+
+    # 4. Find contradictions using semantic search + Granite judgment.
     contradictions = find_contradictions(facts)
 
     return {
         "filename": filename,
-        "num_chunks": len(chunks),
-        "num_facts": len(facts),
-        "stored_vectors": stored,
-        "num_contradictions": len(contradictions),
+        "stats": {
+            "chunks": len(chunks),
+            "facts": len(facts),
+            "vectors_stored": stored,
+            "contradictions": len(contradictions),
+        },
         "contradictions": contradictions,
         "facts": facts,
     }
@@ -76,5 +91,12 @@ def analyze(filename: str):
 
 @app.get("/entities")
 def entities():
-    # Placeholder — will return extracted characters/facts later.
-    return {"message": "not implemented yet"}
+    """Return all canon facts currently stored in the vector database."""
+    from backend.app.vectors import _client, COLLECTION
+
+    try:
+        # scroll() pages through all stored points without a search query.
+        points, _ = _client.scroll(collection_name=COLLECTION, limit=1000)
+        return {"facts": [p.payload for p in points]}
+    except Exception:
+        return {"facts": []}  # collection may not exist yet

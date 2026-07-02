@@ -1,3 +1,5 @@
+"""Vector storage: embeds facts and stores them in Qdrant for semantic lookup."""
+
 import os
 import ollama
 from qdrant_client import QdrantClient

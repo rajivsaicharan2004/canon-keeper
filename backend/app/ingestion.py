@@ -1,3 +1,5 @@
+"""Document ingestion: parses uploaded files and splits them into chunkable text."""
+
 from pathlib import Path
 from docling.document_converter import DocumentConverter
 
