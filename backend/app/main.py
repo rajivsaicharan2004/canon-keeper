@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
 from backend.app.ingestion import ingest
+from backend.app.extraction import extract_all
 
 # Create the app. The title shows up on the /docs page.
 app = FastAPI(title="Canon Keeper API", version="0.1.0")
@@ -56,11 +57,13 @@ def analyze(filename: str):
         raise HTTPException(status_code=404, detail="File not found. Upload it first.")
 
     chunks = ingest(str(file_path))
+    facts = extract_all(chunks)
 
     return {
         "filename": filename,
         "num_chunks": len(chunks),
-        "first_chunk_preview": chunks[0]["text"][:300] if chunks else "",
+        "num_facts": len(facts),
+        "facts": facts,
     }
 
 

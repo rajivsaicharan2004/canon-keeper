@@ -16,7 +16,7 @@ def parse_document(file_path: str) -> str:
     return result.document.export_to_markdown()
 
 
-def chunk_text(text: str, max_chars: int = 1500) -> list[dict]:
+def chunk_text(text: str, max_chars: int = 400) -> list[dict]:
     """
     Split clean text into scene-sized chunks.
 
