@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+docling
+qdrant-client
+ollama
+sqlalchemy
+psycopg2-binary
+python-multipart
+pydantic
