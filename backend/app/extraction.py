@@ -34,6 +34,7 @@ def extract_facts(chunk_text: str, chunk_index: int) -> list[dict]:
     response = ollama.chat(
         model=MODEL,
         messages=[{"role": "user", "content": _PROMPT + chunk_text}],
+        options={"temperature": 0},
     )
     raw = response["message"]["content"]
 
