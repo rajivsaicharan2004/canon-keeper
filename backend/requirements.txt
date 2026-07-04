@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+qdrant-client
+ollama
+python-multipart
+pydantic
+python-dotenv
+numpy<2.0.0
+docling
