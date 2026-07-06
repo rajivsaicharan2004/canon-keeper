@@ -14,19 +14,24 @@ from app.response_normalizer import normalize_analysis_response
 # Create the app. The title shows up on the /docs page.
 app = FastAPI(title="Canon Keeper API", version="0.1.0")
 
-# CORS = Cross-Origin Resource Sharing. Browsers block a webpage on one
-# address (our React app at :5173) from calling a server on another
-# address (:8000) unless the server explicitly allows it. This does that.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://canon-keeper-frontend.vercel.app",
+        "https://canon-keeper-frontend-7kbdm7mw4-charan23.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
-    allow_credentials=True,
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# CORS = Cross-Origin Resource Sharing. Browsers block a webpage on one
+# address (our React app at :5173) from calling a server on another
+# address (:8000) unless the server explicitly allows it. This does that.
 
 # Where uploaded manuscripts get stored. Path() is Python's modern way to
 # handle file paths so it works on Mac/Windows/Linux alike.
