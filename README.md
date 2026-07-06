@@ -18,6 +18,13 @@ Example: if a character has green eyes in Scene 1 and blue eyes in Scene 3, Cano
 - Modern React frontend with a clean writer-focused interface
 
 
+## Live Demo
+
+- Frontend: https://canon-keeper-frontend.vercel.app
+- Backend API Docs: https://canon-keeper-backend.onrender.com/docs
+
+The hosted demo uses a lightweight production profile for Render's free tier. It supports `.txt` and `.md` uploads online. The local development setup keeps Docling support for richer document ingestion.
+
 ## Screenshots
 
 ### Landing Page
