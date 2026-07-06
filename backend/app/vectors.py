@@ -23,7 +23,6 @@ COLLECTION = QDRANT_COLLECTION
 _client = QdrantClient(
     url=QDRANT_URL,
     api_key=QDRANT_API_KEY,
-    check_compatibility=False,
 )
 
 
