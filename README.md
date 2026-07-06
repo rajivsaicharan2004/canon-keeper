@@ -17,6 +17,17 @@ Example: if a character has green eyes in Scene 1 and blue eyes in Scene 3, Cano
 - Use Docling for document ingestion
 - Modern React frontend with a clean writer-focused interface
 
+
+## Screenshots
+
+### Landing Page
+
+![CanonKeeper landing page](docs/screenshots/home.png)
+
+### Workflow
+
+![CanonKeeper workflow section](docs/screenshots/workflow.png)
+
 ## Demo Example
 
 Sample input:
