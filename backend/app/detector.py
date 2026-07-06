@@ -1,13 +1,12 @@
 """Contradiction detection: finds facts that conflict using semantic
-search (Qdrant) to surface candidates and Granite to judge them."""
+search (Qdrant) to surface candidates and the configured LLM to judge them."""
 
 import json
-import ollama
 from qdrant_client.models import Filter
 from app.vectors import _client, embed_text, COLLECTION
-from app.config import LLM_MODEL
+from app.llm import chat_text
 
-# Ask Granite to judge whether two facts genuinely contradict.
+# Ask the configured LLM to judge whether two facts genuinely contradict.
 _JUDGE_PROMPT = """You are a story continuity checker. Two facts were extracted
 from a story. Decide if they CONTRADICT each other.
 
@@ -39,15 +38,10 @@ Fact B: %s
 
 
 def _judge(fact_a: dict, fact_b: dict) -> bool:
-    """Ask Granite whether two facts contradict."""
+    """Ask the configured LLM whether two facts contradict."""
     a = f"{fact_a['entity']} — {fact_a['attribute']}: {fact_a['value']}"
     b = f"{fact_b['entity']} — {fact_b['attribute']}: {fact_b['value']}"
-    response = ollama.chat(
-        model=LLM_MODEL,
-        messages=[{"role": "user", "content": _JUDGE_PROMPT % (a, b)}],
-        options={"temperature": 0},  # deterministic judgments
-    )
-    raw = response["message"]["content"]
+    raw = chat_text(_JUDGE_PROMPT % (a, b), temperature=0)
     try:
         # Find the JSON object even if the model adds stray text.
         start = raw.find("{")
@@ -65,7 +59,7 @@ def find_contradictions(facts: list[dict], top_k: int = 8) -> list[dict]:
        even when worded differently ("type" vs "breed").
     2. Vector search surfaces semantically-close candidates the clustering
        might miss.
-    Both candidate sets are judged by Granite; results are de-duplicated.
+    Both candidate sets are judged by the configured LLM; results are de-duplicated.
     """
     from app.normalize import group_candidate_pairs
 

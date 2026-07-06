@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-"""Fact extraction: turns document chunks into structured canon facts using Granite."""
+"""Fact extraction: turns document chunks into structured canon facts using the configured LLM."""
 
 import json
-import ollama
-from app.config import LLM_MODEL
+from app.llm import chat_text
 
-# The instruction we give Granite for every chunk. Being explicit and giving
+# The instruction we give the configured LLM for every chunk. Being explicit and giving
 # an example ("few-shot") dramatically improves small-model reliability.
 _PROMPT = """You are a story continuity analyst. Read the passage and extract
 canon facts: concrete, checkable statements about characters, their traits,
@@ -29,7 +28,7 @@ If there are no clear facts, return [].
 
 
 def extract_facts(chunk_text: str, chunk_index: int, known_entities: list[str] | None = None) -> list[dict]:
-    """Send one chunk to Granite and get back a list of canon facts,
+    """Send one chunk to the configured LLM and get back a list of canon facts,
     resolving pronouns/vague references to known character names."""
     known = known_entities or []
     context = ""
@@ -41,12 +40,7 @@ def extract_facts(chunk_text: str, chunk_index: int, known_entities: list[str] |
             "KNOWN CHARACTER by name. Never use a pronoun or generic noun as the entity.\n"
         )
 
-    response = ollama.chat(
-        model=LLM_MODEL,
-        messages=[{"role": "user", "content": _PROMPT + context + "\nPassage:\n" + chunk_text}],
-        options={"temperature": 0},
-    )
-    raw = response["message"]["content"]
+    raw = chat_text(_PROMPT + context + "\nPassage:\n" + chunk_text, temperature=0)
 
     try:
         data = json.loads(raw)
@@ -93,7 +87,7 @@ def extract_all(chunks: list[dict]) -> list[dict]:
     """
     Extract facts across all chunks with coreference resolution: as we go,
     we build a list of known character names and pass it to later chunks so
-    Granite can bind pronouns and vague references ('the woman', 'her') to
+    the configured LLM can bind pronouns and vague references ('the woman', 'her') to
     the correct named character.
     """
     all_facts = []
