@@ -1,7 +1,7 @@
 """Document ingestion: parses uploaded files and splits them into chunkable text."""
 
+import os
 from pathlib import Path
-from docling.document_converter import DocumentConverter
 
 # One converter instance, reused. It loads ML models on first use (slow),
 # so we don't want to recreate it on every request.
