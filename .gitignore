@@ -9,3 +9,7 @@ __pycache__/
 *.pyc
 backend/uploads/*
 .DS_Store
+
+# Vercel
+frontend/.vercel/
+.vercel/
