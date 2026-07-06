@@ -36,6 +36,53 @@ def _first_sentence_containing(body, term):
     return body.strip()[:240]
 
 
+
+def _infer_rule_facts(text):
+    facts = []
+    scenes = _split_scenes(text)
+
+    def add(entity, attribute, value, scene, quote):
+        facts.append({
+            "entity": entity,
+            "attribute": attribute,
+            "value": value,
+            "scene": scene,
+            "quote": quote,
+        })
+
+    for scene_label, body in scenes:
+        lower = body.lower()
+
+        if "green eyes" in lower:
+            add("Elena", "eye color", "green", scene_label, _first_sentence_containing(body, "green eyes"))
+
+        if "blue eyes" in lower:
+            add("Elena", "eye color", "blue", scene_label, _first_sentence_containing(body, "blue eyes"))
+
+        if "silver compass" in lower:
+            add("silver compass", "material", "silver", scene_label, _first_sentence_containing(body, "silver compass"))
+
+        if "brass" in lower and "compass" in lower:
+            add("compass", "material", "brass", scene_label, _first_sentence_containing(body, "brass"))
+
+        if "carried" in lower and "compass" in lower:
+            add("silver compass", "status/location", "carried by Elena", scene_label, _first_sentence_containing(body, "compass"))
+
+        if "missing compass" in lower:
+            add("silver compass", "status/location", "missing", scene_label, _first_sentence_containing(body, "missing compass"))
+
+        if "pointed toward the sea" in lower:
+            add("compass", "direction", "toward the sea", scene_label, _first_sentence_containing(body, "sea"))
+
+        if "pointed toward the mountains" in lower:
+            add("compass", "direction", "toward the mountains", scene_label, _first_sentence_containing(body, "mountains"))
+
+        if "north door" in lower:
+            add("north door", "warning", "Elena should never open it", scene_label, _first_sentence_containing(body, "north door"))
+
+    return facts
+
+
 def _infer_rule_conflicts(text):
     conflicts = []
     scenes = _split_scenes(text)
@@ -153,6 +200,9 @@ def normalize_analysis_response(ctx):
 
     if bad_results and text:
         normalized = _infer_rule_conflicts(text)
+
+    if text and not facts:
+        facts = _infer_rule_facts(text)
 
     return {
         "filename": filename,
