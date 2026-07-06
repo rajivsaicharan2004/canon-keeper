@@ -41,7 +41,14 @@ def _judge(fact_a: dict, fact_b: dict) -> bool:
     """Ask the configured LLM whether two facts contradict."""
     a = f"{fact_a['entity']} — {fact_a['attribute']}: {fact_a['value']}"
     b = f"{fact_b['entity']} — {fact_b['attribute']}: {fact_b['value']}"
-    raw = chat_text(_JUDGE_PROMPT % (a, b), temperature=0)
+    try:
+        raw = chat_text(_JUDGE_PROMPT % (a, b), temperature=0)
+    except Exception as exc:
+        print("LLM judge failed, using deterministic fallback:", repr(exc))
+        same_entity = fact_a.get("entity", "").lower() == fact_b.get("entity", "").lower()
+        same_attr = fact_a.get("attribute", "").lower() == fact_b.get("attribute", "").lower()
+        different_value = fact_a.get("value") != fact_b.get("value")
+        return bool(same_entity and same_attr and different_value)
     try:
         # Find the JSON object even if the model adds stray text.
         start = raw.find("{")
