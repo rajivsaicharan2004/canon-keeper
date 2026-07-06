@@ -1,7 +1,9 @@
+import traceback
 """FastAPI entrypoint for the Canon Keeper backend pipeline."""
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pathlib import Path
 from uuid import uuid4
 
@@ -13,6 +15,17 @@ from app.response_normalizer import normalize_analysis_response
 
 # Create the app. The title shows up on the /docs page.
 app = FastAPI(title="Canon Keeper API", version="0.1.0")
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    print("UNHANDLED ERROR:", repr(exc))
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "error_type": exc.__class__.__name__},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
 
 app.add_middleware(
     CORSMiddleware,
