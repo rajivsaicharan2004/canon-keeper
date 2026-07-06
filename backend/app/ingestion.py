@@ -1,51 +1,58 @@
-"""Document ingestion: parses uploaded files and splits them into chunkable text."""
+from __future__ import annotations
 
 import os
 from pathlib import Path
 
-# One converter instance, reused. It loads ML models on first use (slow),
-# so we don't want to recreate it on every request.
-_converter = DocumentConverter()
+
+ALLOWED_TEXT = {".txt", ".md"}
+ALLOWED_DOCLING = {".pdf", ".docx", ".pptx", ".html"}
 
 
 def parse_document(file_path: str) -> str:
-    """
-    Turn a file (PDF/DOCX/TXT) into clean text.
-    Docling reconstructs reading order and structure, then we export to
-    Markdown — headings become '#', paragraphs are separated by blank lines.
-    """
-    result = _converter.convert(file_path)
-    return result.document.export_to_markdown()
+    path = Path(file_path)
+    suffix = path.suffix.lower()
+
+    if suffix in ALLOWED_TEXT:
+        return path.read_text(encoding="utf-8", errors="ignore")
+
+    if suffix in ALLOWED_DOCLING:
+        if os.getenv("DISABLE_DOCLING", "false").lower() == "true":
+            raise ValueError(
+                "Document parsing is disabled in the hosted demo. "
+                "Please upload a .txt or .md file."
+            )
+
+        from docling.document_converter import DocumentConverter
+
+        converter = DocumentConverter()
+        result = converter.convert(str(path))
+        return result.document.export_to_markdown()
+
+    raise ValueError(f"Unsupported file type: {suffix}")
 
 
-def chunk_text(text: str, max_chars: int = 400) -> list[dict]:
-    """
-    Split clean text into scene-sized chunks.
-
-    Strategy: split on blank lines (paragraph breaks), then greedily group
-    paragraphs until adding the next one would exceed max_chars, then start
-    a fresh chunk. This keeps related sentences together instead of cutting
-    mid-thought.
-    """
-    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+def chunk_text(text: str, chunk_size: int = 1200, overlap: int = 150) -> list[dict]:
+    text = text.strip()
+    if not text:
+        return []
 
     chunks = []
-    current = ""
-    for para in paragraphs:
-        if current and len(current) + len(para) > max_chars:
-            chunks.append(current)   # seal the current chunk
-            current = para           # start a new one
-        else:
-            current = f"{current}\n\n{para}" if current else para
+    start = 0
+    index = 0
 
-    if current:                      # don't lose the final chunk
-        chunks.append(current)
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end].strip()
 
-    # Index each chunk so we can cite "chunk #3" later.
-    return [{"index": i, "text": c} for i, c in enumerate(chunks)]
+        if chunk:
+            chunks.append({"index": index, "text": chunk})
+
+        index += 1
+        start = max(end - overlap, end)
+
+    return chunks
 
 
 def ingest(file_path: str) -> list[dict]:
-    """Full pipeline: parse the file, then chunk it."""
     clean_text = parse_document(file_path)
     return chunk_text(clean_text)
