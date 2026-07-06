@@ -77,7 +77,9 @@ def _infer_rule_facts(text):
         if "pointed toward the mountains" in lower:
             add("compass", "direction", "toward the mountains", scene_label, _first_sentence_containing(body, "mountains"))
 
-        if "north door" in lower:
+        if "north door" in lower and "never warned" in lower:
+            add("north door", "warning", "Marcus denied warning Elena", scene_label, _first_sentence_containing(body, "north door"))
+        elif "north door" in lower:
             add("north door", "warning", "Elena should never open it", scene_label, _first_sentence_containing(body, "north door"))
 
     return facts
@@ -152,6 +154,66 @@ def _infer_rule_conflicts(text):
             "new_quote": missing["quote"],
             "severity": "medium",
             "explanation": "The compass is established as being carried by Elena, but later appears to be missing.",
+        })
+
+    silver = None
+    brass = None
+    warned = None
+    denied_warning = None
+
+    for scene_label, body in scenes:
+        lower = body.lower()
+
+        if "silver compass" in lower:
+            silver = {
+                "scene": scene_label,
+                "quote": _first_sentence_containing(body, "silver compass"),
+            }
+
+        if "brass" in lower and "compass" in lower:
+            brass = {
+                "scene": scene_label,
+                "quote": _first_sentence_containing(body, "brass"),
+            }
+
+        if "warned elena" in lower and "north door" in lower and "never warned" not in lower:
+            warned = {
+                "scene": scene_label,
+                "quote": _first_sentence_containing(body, "north door"),
+            }
+
+        if "never warned elena" in lower and "north door" in lower:
+            denied_warning = {
+                "scene": scene_label,
+                "quote": _first_sentence_containing(body, "north door"),
+            }
+
+    if silver and brass:
+        conflicts.append({
+            "entity": "compass",
+            "attribute": "material",
+            "old_value": "silver",
+            "new_value": "brass",
+            "old_scene": silver["scene"],
+            "new_scene": brass["scene"],
+            "old_quote": silver["quote"],
+            "new_quote": brass["quote"],
+            "severity": "high",
+            "explanation": "The compass is described as silver earlier, but later Marcus says it was brass.",
+        })
+
+    if warned and denied_warning:
+        conflicts.append({
+            "entity": "Marcus",
+            "attribute": "warning about north door",
+            "old_value": "warned Elena",
+            "new_value": "denied warning Elena",
+            "old_scene": warned["scene"],
+            "new_scene": denied_warning["scene"],
+            "old_quote": warned["quote"],
+            "new_quote": denied_warning["quote"],
+            "severity": "high",
+            "explanation": "Marcus warns Elena about the north door earlier, but later says he never warned her.",
         })
 
     return conflicts
