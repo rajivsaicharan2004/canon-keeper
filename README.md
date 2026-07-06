@@ -1,87 +1,31 @@
-# CanonKeeper — AI Story Continuity Engine
+# CanonKeeper
 
-CanonKeeper is an AI-powered continuity checker for fiction writers. It uses Qwen through Ollama to extract story facts, stores them in Qdrant, and detects contradictions across scenes.
+CanonKeeper is an AI-powered continuity checker for fiction writers.
 
-Built for the IBM SkillsBuild AI Builders Challenge (July 2026 — Creative Industries theme).
+It analyzes story drafts, extracts canon facts, stores them in a vector database, and flags contradictions across scenes.
 
-## What it does
+Example: if a character has green eyes in Scene 1 and blue eyes in Scene 3, CanonKeeper identifies the inconsistency, shows the conflicting quotes, and explains the issue.
 
-Upload a manuscript (.txt, .pdf, or .docx). CanonKeeper then:
+## Features
 
-1. Parses the document into clean text with Docling.
-2. Splits it into scene-sized chunks.
-3. Extracts canon facts from each chunk with Qwen — structured statements like Watson · war wound location · left shoulder.
-4. Embeds each fact with a local embedding model and stores it in a Qdrant vector database.
-5. Detects contradictions by finding semantically similar facts and asking Granite to judge whether they genuinely conflict — reporting each with its source scenes as evidence.
+- Upload story drafts for continuity analysis
+- Extract structured facts from scenes
+- Detect contradictions across character traits, object status, and story details
+- Show source quotes for each conflict
+- Use Qwen through Ollama for local LLM reasoning
+- Use Qdrant for vector storage and retrieval
+- Use Docling for document ingestion
+- Modern React frontend with a clean writer-focused interface
 
-## Why this design
+## Demo Example
 
-Structured facts, not raw Q&A. Extracting atomic facts (entity · attribute · value) makes every finding traceable to a source scene and lets the tool scale to long documents.
+Sample input:
 
-Semantic search before AI judgment. Embeddings + Qdrant cheaply narrow the facts down to genuinely similar pairs; Qwen then reasons only over those candidates. This lets it recognize that "Dr. Watson · war wound location" and "Watson · wound location" describe the same thing despite different wording.
+```text
+Scene 1:
+Elena entered the old observatory with green eyes shining under the moonlight.
+She carried a silver compass given to her by her brother Marcus.
 
-Tuned for precision. A similarity threshold and a few-shot judge prompt run at temperature 0 keep false positives down.
-
-Local and private. Qwen runs locally via Ollama, so unpublished manuscripts never leave the author's machine.
-
-## Tech Stack
-
-- React + Vite frontend
-- FastAPI backend
-- Qwen3 8B via Ollama
-- Qdrant vector database
-- Nomic Embed Text or other Ollama embedding model
-
-## Architecture
-
-Manuscript -> Docling parse + chunk -> Scene chunks -> Qwen extraction -> Canon facts -> Embeddings -> Qdrant vector store -> semantic search + Qwen judge -> Contradictions (with cited scenes)
-
-## Running locally
-
-Prerequisites: Python 3.11+, Node.js 18+, Ollama (https://ollama.com), and a Qdrant Cloud account.
-
-1. Pull the models:
-
-    ollama pull qwen3:8b
-    ollama pull nomic-embed-text
-
-2. Backend:
-
-    python -m venv .venv
-    source .venv/bin/activate
-    pip install -r backend/requirements.txt
-
-Create a .env file in the project root with QDRANT_URL and QDRANT_API_KEY, then:
-
-    uvicorn backend.app.main:app --reload
-
-API docs at http://localhost:8000/docs
-
-3. Frontend:
-
-    cd frontend
-    npm install
-    npm run dev
-
-App at http://localhost:5173
-
-## Project structure
-
-- backend/app/ingestion.py — Docling parsing and scene chunking
-- backend/app/extraction.py — Granite fact extraction with robust JSON parsing
-- backend/app/vectors.py — Granite embeddings and Qdrant storage
-- backend/app/detector.py — semantic candidate search + Granite contradiction judging
-- backend/app/main.py — FastAPI endpoints (/upload, /analyze, /entities)
-- frontend/src/App.tsx — upload, analyze, and results UI
-
-## Status and known limitations
-
-- Extraction quality depends on the local model; granite4:micro is fast but sometimes labels the same property inconsistently, which can cause some real contradictions to be missed on longer documents.
-- Results can vary slightly between runs due to model non-determinism.
-- Tuning (chunk size, similarity threshold, neighbor count) trades recall against precision and speed; current settings favor precision.
-
-## Future work
-
-- Attribute normalization so differently-worded properties cluster reliably.
-- A knowledge-graph view of characters and their facts across a story.
-- A canon-safe writing assistant that checks new drafts against established facts in real time.
+Scene 3:
+Elena returned to the observatory at dawn.
+Her blue eyes scanned the room as she searched for the missing compass.
